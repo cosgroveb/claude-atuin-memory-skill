@@ -1,6 +1,6 @@
 # claude-atuin-memory-skill
 
-A Claude Code skill that persists project context across machines using [atuin](https://atuin.sh)'s key-value store with sync.
+A Claude Code skill that persists project context across machines using [atuin](https://atuin.sh)'s key-value store with sync. Without polluting your working-directory with random markdown files.
 
 ## Installation
 
