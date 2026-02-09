@@ -1,11 +1,16 @@
 ---
 name: atuin-memory
-description: Check, store, and retrieve project memories from atuin kv. Use when starting work on a project, recalling previous context, storing plans or specs, or when the user mentions memory, atuin, or project context.
+description: Store and retrieve project context via atuin kv. Use at session start, when storing plans/specs, or when user mentions memory or atuin.
 allowed-tools:
   - Bash(atuin *)
   - Bash(git rev-parse *)
   - Bash(git branch *)
   - Bash(basename *)
+  - Bash(pwd)
+  - Bash(cat *)
+  - Bash(echo *)
+  - Bash(grep *)
+  - Bash(head *)
   - Read
 ---
 
@@ -13,19 +18,25 @@ allowed-tools:
 
 Store and retrieve project context using atuin kv to persist across sessions.
 
+## Project Detection
+
+Reuse these variables in all commands:
+
+```bash
+PROJECT=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" 2>/dev/null || basename "$PWD")
+BRANCH=$(git branch --show-current 2>/dev/null)
+BRANCH=${BRANCH:-main}
+```
+
 ## Before Starting Work
 
 ```bash
-PROJECT=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
-BRANCH=$(git branch --show-current 2>/dev/null)
-BRANCH=${BRANCH:-main}
-
 echo "=== $PROJECT ($BRANCH) ==="
 
 # List all memories for this project
-atuin kv list --namespace "project-metadata" | grep -F "$PROJECT-" || echo "(none)"
+atuin kv list --namespace "project-metadata" | grep -F "$PROJECT-" || echo "(no memories found)"
 
-# Retrieve specific memories
+# Retrieve specific memories (empty output means memory doesn't exist)
 atuin kv get --namespace "project-metadata" "$PROJECT-$BRANCH-plan"
 atuin kv get --namespace "project-metadata" "$PROJECT-$BRANCH-spec"
 atuin kv get --namespace "project-metadata" "$PROJECT-$BRANCH-todo"
@@ -34,35 +45,41 @@ atuin kv get --namespace "project-metadata" "$PROJECT-$BRANCH-todo"
 ## Acting on Retrieved Memories
 
 <memory-actions>
-  <action id="validate" phase="start">
+  <action id="validate" phase="on-retrieval">
     Check if stored plan/spec/todo still matches git state and current goals.
-    Flag staleness (>7 days) or drift from implementation.
   </action>
-  <action id="announce" phase="start">
+  <action id="announce" phase="on-retrieval">
     Briefly summarize what you found so user can correct misunderstandings.
   </action>
-  <action id="surface-issues" phase="start">
+  <action id="surface-issues" phase="on-retrieval">
     Raise blockers, gaps, or open questions before proceeding.
     Don't assume—ask.
   </action>
-  <action id="resume" phase="start">
+  <action id="resume" phase="on-retrieval">
     Pick up from first incomplete todo item. If none exist, start fresh.
   </action>
-  <action id="persist" phase="end">
+  <action id="persist" phase="on-completion">
     Update stored state after completing work so next session can resume cleanly.
   </action>
 </memory-actions>
 
 ## Storing Memories
 
-```bash
-# Store a plan
-atuin kv set -n "project-metadata" -k "$PROJECT-$BRANCH-plan" "content"
+For multi-line content, write to a temp file first to avoid shell escaping issues:
 
-# Store from temp file, verify content, then delete
-content="$(cat spec.md)" && \
-  atuin kv set -n "project-metadata" -k "$PROJECT-$BRANCH-spec" "$content" && \
-  [[ "$(atuin kv get -n "project-metadata" "$PROJECT-$BRANCH-spec")" == "$content" ]] && rm spec.md
+```bash
+# 1. Write content to temp file
+# 2. Store from temp file
+atuin kv set --namespace "project-metadata" --key "$PROJECT-$BRANCH-plan" "$(cat /tmp/plan.md)"
+
+# 3. Verify storage succeeded
+atuin kv get --namespace "project-metadata" "$PROJECT-$BRANCH-plan" | head -5
+```
+
+For short single-line values, store directly:
+
+```bash
+atuin kv set --namespace "project-metadata" --key "$PROJECT-$BRANCH-status" "in-progress"
 ```
 
 ## Key Naming
@@ -72,16 +89,23 @@ content="$(cat spec.md)" && \
 | `{project}-{branch}-plan` | Implementation plans |
 | `{project}-{branch}-spec` | Specifications/designs |
 | `{project}-{branch}-todo` | Task state |
-| `{project}-{branch}-session-YYYY-MM-DD` | Session summaries (last wins) |
+| `{project}-{branch}-session-YYYY-MM-DD` | Session summaries |
 
-Branch slashes preserved (e.g., `feature/foo`). Same-day sessions overwrite.
+## Quick Reference
+
+| Operation | Command |
+|-----------|---------|
+| List all | `atuin kv list --namespace "project-metadata"` |
+| Get | `atuin kv get --namespace "project-metadata" "key"` |
+| Set | `atuin kv set --namespace "project-metadata" --key "key" "value"` |
+| Delete | `atuin kv delete --namespace "project-metadata" "key"` |
 
 <constraints>
   <constraint id="no-local-files">
     Store artifacts in atuin, not local markdown files
   </constraint>
-  <constraint id="cleanup">
-    Delete temp files immediately after storing contents
+  <constraint id="temp-location">
+    Use /tmp for any temporary files needed during storage
   </constraint>
   <constraint id="no-git-metadata">
     Never commit metadata files to git
