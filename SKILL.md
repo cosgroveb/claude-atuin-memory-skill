@@ -86,16 +86,28 @@ atuin kv set --namespace "project-metadata" --key "$PROJECT-$BRANCH-status" "in-
 | `{project}-{branch}-plan` | Implementation plans |
 | `{project}-{branch}-spec` | Specifications/designs |
 | `{project}-{branch}-todo` | Task state |
-| `{project}-{branch}-session-YYYY-MM-DD` | Session summaries |
+| `{project}-{branch}-session-$(date +%Y-%m-%d)` | Session summaries (use current date) |
+
+## Deleting Memories
+
+```bash
+# Delete a specific key
+atuin kv delete --namespace "project-metadata" "$PROJECT-$BRANCH-plan"
+
+# Verify deletion (should return empty)
+atuin kv get --namespace "project-metadata" "$PROJECT-$BRANCH-plan"
+```
 
 ## Quick Reference
 
-| Operation | Command |
-|-----------|---------|
-| List all | `atuin kv list --namespace "project-metadata"` |
-| Get | `atuin kv get --namespace "project-metadata" "key"` |
-| Set | `atuin kv set --namespace "project-metadata" --key "key" "value"` |
-| Delete | `atuin kv delete --namespace "project-metadata" "key"` |
+**Argument syntax is inconsistent across subcommands — pay attention to positional vs flag arguments:**
+
+| Operation | Command | Notes |
+|-----------|---------|-------|
+| List all | `atuin kv list --namespace "project-metadata"` | |
+| Get | `atuin kv get --namespace "project-metadata" "key"` | KEY is **positional** |
+| Set | `atuin kv set --namespace "project-metadata" --key "key" "value"` | KEY is **`--key` flag**, VALUE is **positional** |
+| Delete | `atuin kv delete --namespace "project-metadata" "key"` | KEY is **positional** (not `--key`) |
 
 <constraints>
   - Store artifacts in atuin, not local markdown files
