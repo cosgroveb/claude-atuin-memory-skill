@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'dist/**'
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build dist bundles
+        run: make dist
+
+      - name: Verify expected build output
+        run: |
+          test -f dist/claude-plugin/.claude-plugin/plugin.json
+          test -f dist/claude-plugin/.claude-plugin/marketplace.json
+          test -f dist/claude-plugin/.claude/skills/atuin-memory/SKILL.md
+          test -f dist/agents/.agents/skills/atuin-memory/SKILL.md
+
+      - name: Verify dist is current
+        run: git diff --exit-code
+
+  sync-dist:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Build dist bundles
+        run: make dist
+
+      - name: Commit regenerated dist
+        run: |
+          if git diff --quiet -- dist; then
+            echo "dist is current"
+            exit 0
+          fi
+          git add dist
+          git commit -m "Update generated bundles"
+          git push

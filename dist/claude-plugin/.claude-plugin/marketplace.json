@@ -1,0 +1,25 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-atuin-memory-skill",
+  "metadata": {
+    "description": "Persist project roadmap and feature memory in atuin, with optional cross-project priming memory."
+  },
+  "owner": {
+    "name": "Brian Cosgrove",
+    "email": "cosgroveb@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "atuin-memory",
+      "description": "Persist project roadmap and feature memory in atuin, with optional cross-project priming memory.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Brian Cosgrove",
+        "email": "cosgroveb@gmail.com"
+      },
+      "source": "./dist/claude-plugin",
+      "category": "productivity",
+      "tags": ["atuin", "memory", "skills", "claude", "codex"]
+    }
+  ]
+}

@@ -1,47 +1,54 @@
 # claude-atuin-memory-skill
 
-A Claude Code skill that persists project context across machines using [atuin](https://atuin.sh)'s key-value store with sync. It keeps project state in `project-metadata` and supports optional cross-project priming memory in `technical-knowledge`, without polluting your working directory with random markdown files.
+A Claude plugin and skill bundle for atuin-backed memory. It keeps roadmaps, plans, specs, todos, and session notes in `project-metadata`. It can also read shared reference notes from `technical-knowledge`. Nothing gets written into your repo just to keep state between sessions.
+
+This repo packages the same source in two generated bundles:
+
+- Claude plugin bundle
+- `.agents` skill bundle
+
+The source of truth is [`skills/atuin-memory`](skills/atuin-memory).
 
 ## Installation
 
-### Manual
+### Claude plugin
 
 ```bash
-git clone https://github.com/cosgroveb/claude-atuin-memory-skill.git ~/.claude/skills/atuin-memory
+/plugin marketplace add https://github.com/cosgroveb/claude-atuin-memory-skill.git
+/plugin install atuin-memory@claude-atuin-memory-skill
 ```
 
-### Via chezmoi
+Or clone and install locally:
 
-Add to your `.chezmoiexternal.toml`:
-
-```toml
-[".claude/skills/atuin-memory"]
-    type = "git-repo"
-    url = "https://github.com/cosgroveb/claude-atuin-memory-skill.git"
-    refreshPeriod = "168h"
+```bash
+git clone https://github.com/cosgroveb/claude-atuin-memory-skill.git
+cd claude-atuin-memory-skill
+make install
 ```
-
-Then run `chezmoi apply`.
 
 ## Prerequisites
 
 - [atuin](https://atuin.sh) with sync enabled
 - Git
 
-## What It Does
+## Workflow
 
-This skill activates when you start work on a project or mention "memory", "atuin", or "project context" and helps Claude:
+Use this skill when you start work on a project or mention "memory", "atuin", or saved project notes.
 
-- Store and retrieve project roadmaps, plans, specs, todos, and session summaries
-- Resume work from where you left off across machines
-- Validate stored context against current git state
-- Surface blockers or stale assumptions before proceeding
+The workflow is simple:
+
+1. Read the project's saved roadmap, plan, spec, todo list, and recent session notes.
+2. Compare those notes to the current repo and current goal.
+3. Call out stale assumptions, missing details, or blockers before doing work.
+4. Write updated project notes back to atuin when the task is done.
+
+This is session continuity, not a local note-taking system.
 
 ## Namespaces
 
 ### `project-metadata`
 
-Project work-state memory:
+`project-metadata` stores the work for one project:
 
 - `{project}-roadmap`
 - `{project}-{feature}-plan`
@@ -49,17 +56,40 @@ Project work-state memory:
 - `{project}-{feature}-todo`
 - `{project}-{feature}-session-YYYY-MM-DD`
 
-The skill treats `main` and `master` as invalid feature names. If the feature is unclear, it should ask instead of inventing one from the current branch.
+`main` and `master` are never valid feature names. If the feature name is unclear, the agent should ask instead of guessing from the current branch.
 
 ### `technical-knowledge`
 
-Optional cross-project priming memory:
+`technical-knowledge` is for shared reference material that applies across projects:
 
 - Reusable technical references
 - Curated summaries of documentation and books
-- Grounded notes that improve later in-context behavior across projects
+- Notes that help the agent start with the right commands, conventions, and failure modes
 
-This is not task-state memory. It is read-mostly reference memory. Practically, this supports knowledge priming and lightweight retrieval-augmented prompting, not fine-tuning.
+Do not use this namespace to track task state. Use it for stable reference material you want available in later sessions on other machines.
+
+## Build
+
+```bash
+make dist
+```
+
+Run this only for a local check. CI owns `dist/`.
+
+Build output:
+
+- `dist/claude-plugin/.claude/skills/atuin-memory`
+- `dist/claude-plugin/.claude-plugin/{plugin.json,marketplace.json}`
+- `dist/agents/.agents/skills/atuin-memory`
+
+## Editing
+
+Edit these source files:
+
+- `skills/atuin-memory/**`
+- `.claude-plugin/**`
+
+GitHub Actions regenerates and commits `dist/` on pushes to `main`.
 
 ## License
 

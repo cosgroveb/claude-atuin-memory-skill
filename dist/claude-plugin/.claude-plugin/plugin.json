@@ -1,0 +1,11 @@
+{
+  "name": "atuin-memory",
+  "description": "Persist project roadmap and feature memory in atuin, with optional cross-project priming memory.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Brian Cosgrove",
+    "email": "cosgroveb@gmail.com"
+  },
+  "repository": "https://github.com/cosgroveb/claude-atuin-memory-skill",
+  "skills": "./.claude/skills"
+}
