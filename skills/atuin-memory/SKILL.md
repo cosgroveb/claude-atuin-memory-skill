@@ -17,4 +17,3 @@ Use this skill for atuin-backed project memory. Keep task state in `project-meta
 - `main` and `master` are never valid feature slugs.
 - A named branch alone is not enough. If the branch name is the only candidate, ask whether it maps to the memory name.
 - If the derived project or feature slug looks like a temp dir, hidden scratch dir, or placeholder such as `tmp.*`, random dot-dir names, or `no-branch`, ask the user how the memory should be remembered before storing it.
-- Legacy `{project}-{branch}-...` memories may still exist. Read them when relevant, but write new entries with `{feature}`.
