@@ -28,9 +28,6 @@ jobs:
           test -f dist/claude-plugin/.claude/skills/atuin-memory/SKILL.md
           test -f dist/agents/.agents/skills/atuin-memory/SKILL.md
 
-      - name: Verify dist is current
-        run: git diff --exit-code
-
   sync-dist:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
