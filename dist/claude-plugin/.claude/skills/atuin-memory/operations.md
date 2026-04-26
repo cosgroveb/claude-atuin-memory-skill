@@ -15,6 +15,14 @@ For short single-line values:
 atuin kv set --namespace "project-metadata" --key "$PROJECT-$FEATURE-status" "in-progress"
 ```
 
+After creating a memory, report the exact view command:
+
+```text
+Created. View: atuin kv get --namespace "project-metadata" "$PROJECT-$FEATURE-session-YYYY-MM-DD"
+```
+
+Do not summarize the location as `project-metadata/key`.
+
 ## Deleting
 
 ```bash
